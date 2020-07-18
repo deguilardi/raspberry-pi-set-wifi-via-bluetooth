@@ -13,6 +13,7 @@ import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
+import android.util.ArraySet
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
@@ -33,11 +34,13 @@ class MainActivity: AppCompatActivity() {
     inner class WifiScanReceiver : BroadcastReceiver() {
         override fun onReceive(c: Context, intent: Intent) {
             val wifiScanList: List<ScanResult> = wifiManager.scanResults
-            val list: MutableList<String> = ArrayList()
-            for (i in wifiScanList.indices) {
-                list.add(wifiScanList[i].SSID)
+            val set: MutableSet<String> = mutableSetOf()
+            wifiScanList.forEach { item ->
+                if(!item.SSID.isNullOrEmpty()) {
+                    set.add(item.SSID)
+                }
             }
-            val spinnerArrayAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_item, list)
+            val spinnerArrayAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_item, set.toList())
             spinnerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             wifi_spinner.adapter = spinnerArrayAdapter
             writeOutput("Scanning completed.")
