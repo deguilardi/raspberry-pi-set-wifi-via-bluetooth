@@ -35,7 +35,7 @@ def wifi_connect(ssid, psk):
   cmd_result = os.system(cmd)
   print cmd + " - " + str(cmd_result)
 
-  time.sleep(10)
+  time.sleep(15)
 
   cmd = 'iwconfig wlan0'
   cmd_result = os.system(cmd)
