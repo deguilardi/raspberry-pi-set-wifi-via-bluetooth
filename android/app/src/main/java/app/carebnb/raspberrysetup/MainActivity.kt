@@ -13,8 +13,9 @@ import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
-import android.util.ArraySet
+import android.os.CountDownTimer
 import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.IOException
@@ -22,6 +23,8 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.charset.Charset
 import java.util.*
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 import kotlin.concurrent.thread
 
 class MainActivity: AppCompatActivity() {
@@ -143,21 +146,67 @@ class MainActivity: AppCompatActivity() {
             writeOutput("Sending PSK.")
             outputStream.write(psk.toByteArray())
             outputStream.flush()
-            waitForResponse(inputStream, -1)
+
+            runOnUiThread {
+                initCountdown(15)
+            }
+            val response = waitForResponse(inputStream, -1)
+
+            // Extract IP address
+            val zeroTo255 = "(\\d{1,2}|(0|1)\\d{2}|2[0-4]\\d|25[0-5])"
+            val ipPatter = "$zeroTo255\\.$zeroTo255\\.$zeroTo255\\.$zeroTo255"
+            val pattern = Pattern.compile(ipPatter)
+            val matcher: Matcher = pattern.matcher(response)
+            if (matcher.find()) {
+                val ip = matcher.group()
+                runOnUiThread {
+                    Toast.makeText(this, "Wifi set with ip: $ip", Toast.LENGTH_LONG).show()
+                }
+            }
+            else{
+                runOnUiThread {
+                    Toast.makeText(this, "Error. Process finished, but couldn't connect to the network.", Toast.LENGTH_LONG).show()
+                }
+            }
+
             socket.close()
             writeOutput("Success.")
         } catch (e: Exception) {
             e.printStackTrace()
+            start_button.isEnabled = true
+            start_button.isClickable = true
             writeOutput("Failed.")
+            runOnUiThread {
+                Toast.makeText(this, "It looks like this device is not a Carebnb device.", Toast.LENGTH_LONG).show()
+            }
         }
         writeOutput("Done.")
     }
+
+    private fun initCountdown(seconds: Long) {
+        var countdown = 0
+        start_button.isEnabled = false
+        start_button.isClickable = false
+        object : CountDownTimer(seconds * 1000, 50) {
+            override fun onTick(millisUntilFinished: Long) {
+                countdown++
+                progress_bar.progress = (countdown * 100 / (seconds * 1000 / 50)).toInt()
+            }
+            override fun onFinish() {
+                countdown++
+                progress_bar.progress = 100
+                start_button.isEnabled = true
+                start_button.isClickable = true
+            }
+        }.start()
+    }
+
 
     /*
      * TODO actually use the timeout
      */
     @Throws(IOException::class)
-    private fun waitForResponse(mmInputStream: InputStream, timeout: Long) {
+    private fun waitForResponse(mmInputStream: InputStream, timeout: Long): String {
         val delimiter: Byte = 33
         var readBufferPosition = 0
         var bytesAvailable: Int
@@ -174,7 +223,7 @@ class MainActivity: AppCompatActivity() {
                         System.arraycopy(readBuffer, 0, encodedBytes, 0, encodedBytes.size)
                         val data = String(encodedBytes, Charset.forName("US-ASCII"))
                         writeOutput("Received:$data")
-                        return
+                        return data
                     } else {
                         readBuffer[readBufferPosition++] = b
                     }

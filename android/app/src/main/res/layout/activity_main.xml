@@ -93,13 +93,22 @@
         android:layout_alignParentEnd="true"
         android:layout_below="@+id/psk_text_holder" />
 
+    <ProgressBar
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:id="@+id/progress_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="0"
+        android:layout_below="@+id/start_button" />
+
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/messages_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:text="Messages"
-        android:layout_below="@+id/start_button" />
+        android:layout_below="@+id/progress_bar" />
 
     <ScrollView
         android:layout_width="match_parent"
